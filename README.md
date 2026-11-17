@@ -6,7 +6,7 @@
 ## Bạn sẽ làm gì (13:30–17:00 trên lớp, nộp muộn nhất 23:59 cùng ngày)
 | M | Giờ | Việc | Lệnh kiểm tra |
 |---|---|---|---|
-| M0 | 13:30 | Overlay starter lên repo Lab 8, cài đặt và sinh eval set | `python -m lab9.smoke` và `python -m lab9.evalset --build` |
+| M0 | 13:30 | Cài repo Day9 độc lập và sinh eval set | `python -m lab9.smoke` và `python -m lab9.evalset --build` |
 | M1 | 13:45 | Taxonomy ≥5 failure mode từ trace; gắn `failure_modes` cho eval set | `python -m lab9.evalset --check` |
 | M2 | 14:30 | Judge-the-judge: cài `kappa`, P/R, Rogan-Gladen; audit ≥5 bất đồng | `python -m lab9.judge --csv data/eval/judge_tone_public.csv --audit 5` |
 | M3 | 15:15 | Trajectory assertion: `ApprovalBypass`, `RefundAmountCorrect` + 1 metric cho FM-08 | `python -m pytest -q -m student -o addopts= -k "lab9 and not advanced"` |
@@ -16,36 +16,38 @@
 | M6 | sau 17:00 | **Advanced.** Nhiễu: A/A trên 2 bộ seed, `pass@k` / `pass^k`, ngưỡng `pass_hat_5` | `python -m lab9.mutation --aa 66,77,88,99,110 ...` |
 | M7 | sau 17:00 | **Expert.** Gate chống gian lận eval: `integrity_check` + ratchet; scorecard đột biến | `python -m lab9.traps` và `python -m lab9.mutation ...` |
 
-## Cài đặt (M0): chép overlay vào repo Lab 8
+## Cài đặt (M0): repo Day9 độc lập
 
-Starter này **không chạy độc lập**: nó chỉ có `src/lab9/`, docs và workflow. Code agent, dữ liệu và `requirements.txt` nằm trong repo Lab 8 của nhóm.
+Repo cá nhân này đã bao gồm `src/lab8/` cùng dữ liệu và cấu hình public mà Lab9 cần. Không cần chép overlay vào một repo Lab8 khác. `src/lab8/` là dependency tham chiếu được giữ nguyên; không chỉnh sửa các file trong đó.
 
-**Không cần hoàn thiện Lab 8.** M0–M4 (baseline, gate, `fixed`, `seeded_regression`) đều chạy trên shape `swarm`, tức `lab8/shapes/swarm_reference.py` do giảng viên cung cấp, không dùng `workflow`/`single`/`orchestrator` của nhóm. Repo Lab 8 còn TODO vẫn làm được Lab 9, miễn là package `src/lab8/` còn nguyên.
+M0–M4 chạy trên shape `swarm`, tức `lab8/shapes/swarm_reference.py`; không phụ thuộc workflow/single/orchestrator của nhóm. Trace không commit sẵn: `lab9.eval` chạy agent bằng MockLLM trên cùng item và seed để sinh lại trace.
 
-**Lab 8 bị khóa, trace cố định.** Không sửa file nào trong `src/lab8/` (trừ 10 điểm). Trace không commit sẵn: `lab9.eval` chạy lại agent bằng MockLLM trên 14 item × 5 seed cố định, nên chạy lần nào cũng ra cùng một trace. Việc của bạn là eval và phân tích dựa trên trace đó: taxonomy, judge calibration, grader, bootstrap gate.
+Tạo môi trường Python ≥ 3.11 từ thư mục gốc repo. Với `uv`:
 
 ```bash
-# 1. Ở thư mục chứa repo Lab 8 của nhóm (bản nào cũng được, kể cả chưa xong)
-git clone https://github.com/VinUni-AI20k/K5-Day9-Evaluation-and-Failure-Analysis lab9-starter
-cd <repo-lab8-cua-nhom>
-git switch -c starter/d09
-
-# 2. Chép đúng 3 thư mục. KHÔNG chép README/CHECKPOINTS/RUBRIC/SUBMISSION/.gitignore ở gốc:
-#    các file đó trùng tên với Lab 8; đọc chúng ngay trong lab9-starter.
-#    Chép nhầm .gitignore sẽ mất dòng chặn .env và src/eval/instructor/ của Lab 8.
-cp -R ../lab9-starter/src/. src/
-cp -R ../lab9-starter/docs/. docs/
-cp -R ../lab9-starter/.github/. .github/     # thêm eval-gate.yml, giữ ci.yml của Lab 8
-
-# 3. Cài và kiểm tra (Python ≥ 3.11). Với uv: `uv venv && source .venv/bin/activate` trước
+uv venv --python 3.13 .venv
+source .venv/bin/activate
 cd src
-uv pip install -r requirements.txt -r requirements-lab9.txt   # không dùng uv: python -m pip install ...
+uv pip install -r requirements.txt -r requirements-lab9.txt
 python -m lab9.smoke
-python -m lab9.evalset --build          # sinh eval_set_v1.jsonl + labels_v1.json (nhãn TÁCH khỏi item)
-cd .. && git add -A && git commit -m "chore: add lab9 overlay"
+python -m lab9.evalset --build
+python -m lab9.evalset --check
 ```
 
-Kiểm tra nhanh sau bước 2: `git status` chỉ hiện file **mới** trong `src/lab9/`, `src/tests/test_lab9_*`, `src/config/`, `src/data/eval/`, `docs/` và `.github/workflows/eval-gate.yml`. Nếu thấy file `src/lab8/` bị sửa, bạn đã chép nhầm: `git restore src/lab8`.
+Hoặc dùng `python3` nếu phiên bản của nó từ 3.11 trở lên:
+
+```bash
+python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
+cd src
+python -m pip install -r requirements.txt -r requirements-lab9.txt
+python -m lab9.smoke
+python -m lab9.evalset --build
+python -m lab9.evalset --check
+```
+
+Trong nhánh submission này, mapping M1 đã được điền trong `lab9.evalset`; `--build` sinh item có `failure_modes` và ghi nhãn riêng vào `labels_v1.json`. `--check` phải trả 0 lỗi. Không đưa nhãn kỳ vọng vào item.
 
 **Baseline cho CI (M4).** Job `eval-gate` đọc `src/reports/baseline_v1.json` trên nhánh, nên file này phải được commit. Sinh từ `main` đã hoàn thành M1–M3 (`-f` để chắc chắn không bị `.gitignore` bỏ qua):
 ```bash
