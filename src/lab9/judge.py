@@ -20,7 +20,13 @@ FLOORS = {"kappa": 0.6, "precision": 0.8, "recall": 0.7}
 
 def calibrate(path: Path) -> dict:
     rows = list(csv.DictReader(path.open(encoding="utf-8")))
-    human = [r["human"].strip().upper() for r in rows]
+    # Tone replay calls the reference label `human`; helpful replay uses the
+    # more explicit `human_failure` header for the same binary PASS/FAIL label.
+    fields = rows[0].keys() if rows else ()
+    human_key = "human" if "human" in fields else "human_failure"
+    if rows and human_key not in fields:
+        raise ValueError(f"{path}: expected a human or human_failure column")
+    human = [r[human_key].strip().upper() for r in rows]
     judge = [r["judge"].strip().upper() for r in rows]
     p, r = stats.precision_recall(human, judge)
     try:
