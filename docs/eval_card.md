@@ -6,7 +6,7 @@ Generated from the reports produced by `lab9.eval`; report values below were not
 
 - **Baseline run:** `E-swarm-20261117-5c86`; eval set SHA `5c8658e057d6`; 14 items × 5 seeds; MockLLM.
 - **Compared run:** `E-fixed-20261117-5c86`.
-- **Versions:** eval set v1; metric spec 1.1; seeds 11/22/33/44/55. Source code is tracked in the submission Git history.
+- **Versions:** implementation/grader commit `9aace6c`; eval set v1; metric spec 1.1; seeds 11/22/33/44/55. This report was regenerated from the code in that commit.
 - **Labels:** `src/data/eval/labels_v1.json`, stored separately from eval items.
 
 | Metric | Gate rule | Baseline swarm | Fixed | Fixed − baseline, 95% paired CI |
